@@ -8,6 +8,9 @@ import CallPage from "./pages/CallPage.jsx";
 import ChatPage from "./pages/ChatPage.jsx";
 import OnboardingPage from "./pages/OnboardingPage.jsx";
 import FriendsPage from "./pages/FriendsPage.jsx";
+import LobbyPage from "./pages/LobbyPage.jsx"; // ✅ NEW
+import GroupChatPage from "./pages/GroupChatPage.jsx"; // ✅ NEW
+import SettingsPage from "./pages/SettingsPage.jsx"; // ✅ NEW
 
 import { Toaster } from "react-hot-toast";
 
@@ -28,7 +31,7 @@ const App = () => {
   return (
     <div className="h-screen" data-theme={theme}>
       <Routes>
-        {/* Home */}
+        {/* 🏠 Home */}
         <Route
           path="/"
           element={
@@ -42,7 +45,7 @@ const App = () => {
           }
         />
 
-        {/* Signup */}
+        {/* 🧑‍💻 Signup */}
         <Route
           path="/signup"
           element={
@@ -54,7 +57,7 @@ const App = () => {
           }
         />
 
-        {/* Login */}
+        {/* 🔑 Login */}
         <Route
           path="/login"
           element={
@@ -66,7 +69,7 @@ const App = () => {
           }
         />
 
-        {/* Notifications */}
+        {/* 🔔 Notifications */}
         <Route
           path="/notifications"
           element={
@@ -80,7 +83,7 @@ const App = () => {
           }
         />
 
-        {/* Friends */}
+        {/* 👥 Friends */}
         <Route
           path="/friends"
           element={
@@ -94,7 +97,7 @@ const App = () => {
           }
         />
 
-        {/* Call */}
+        {/* 📞 Call */}
         <Route
           path="/call/:id"
           element={
@@ -106,13 +109,37 @@ const App = () => {
           }
         />
 
-        {/* Chat */}
+        {/* 💬 Chat */}
         <Route
           path="/chat/:id"
           element={
             isAuthenticated && isOnboarded ? (
+              <ChatPage />
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+            )
+          }
+        />
+
+        {/* 👥 Group Chat */}
+        <Route
+          path="/group/:id"
+          element={
+            isAuthenticated && isOnboarded ? (
+              <GroupChatPage />
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+            )
+          }
+        />
+
+        {/* 🧭 Lobby (NEW MEETING PAGE) */}
+        <Route
+          path="/lobby/:meetingId"
+          element={
+            isAuthenticated && isOnboarded ? (
               <Layout showSidebar={false}>
-                <ChatPage />
+                <LobbyPage />
               </Layout>
             ) : (
               <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
@@ -120,7 +147,21 @@ const App = () => {
           }
         />
 
-        {/* Onboarding */}
+        {/* ⚙️ Settings */}
+        <Route
+          path="/settings"
+          element={
+            isAuthenticated && isOnboarded ? (
+              <Layout showSidebar={true}>
+                <SettingsPage />
+              </Layout>
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+            )
+          }
+        />
+
+        {/* 🚀 Onboarding */}
         <Route
           path="/onboarding"
           element={

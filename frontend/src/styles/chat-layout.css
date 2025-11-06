@@ -1,0 +1,92 @@
+/* Standardized Chat Layout Styles */
+
+/* Full screen chat container */
+.chat-container {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: hsl(var(--b1));
+  overflow: hidden;
+}
+
+/* Chat header */
+.chat-header {
+  background-color: hsl(var(--b2));
+  border-bottom: 1px solid hsl(var(--bc) / 0.1);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+/* Chat messages container */
+.chat-messages {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Remove default backgrounds from Stream Chat */
+.str-chat {
+  height: 100%;
+  background: transparent !important;
+}
+
+.str-chat__container {
+  height: 100%;
+  background: transparent !important;
+}
+
+.str-chat__main-panel {
+  height: 100%;
+  background: transparent !important;
+}
+
+.str-chat-channel {
+  height: 100%;
+  background: transparent !important;
+}
+
+.str-chat__channel {
+  height: 100%;
+}
+
+/* Message list styling */
+.str-chat__list {
+  background-color: hsl(var(--b1)) !important;
+  padding: 1rem;
+}
+
+/* Input area styling */
+.str-chat__input-flat {
+  background-color: hsl(var(--b1)) !important;
+  border-top: 1px solid hsl(var(--bc) / 0.1);
+  padding: 1rem;
+}
+
+.str-chat__textarea textarea {
+  background-color: hsl(var(--b2)) !important;
+  border-color: hsl(var(--bc) / 0.2) !important;
+  color: hsl(var(--bc)) !important;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.str-chat__textarea textarea:focus {
+  outline: none;
+  border-color: hsl(var(--p)) !important;
+  box-shadow: 0 0 0 2px hsl(var(--p) / 0.2);
+}
+
+/* Loading state */
+.chat-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: hsl(var(--b1));
+}

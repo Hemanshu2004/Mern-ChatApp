@@ -1,0 +1,139 @@
+/* Custom Chat Styles */
+
+/* Message status indicators */
+.str-chat__message-simple-status {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+}
+
+/* Own message styling */
+.str-chat__message--me .str-chat__message-text-inner {
+  background-color: hsl(var(--p)) !important;
+  color: hsl(var(--pc)) !important;
+}
+
+.str-chat__message--other .str-chat__message-text-inner {
+  background-color: hsl(var(--b2)) !important;
+  color: hsl(var(--bc)) !important;
+}
+
+/* Message timestamp */
+.str-chat__message-simple-timestamp {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+/* Unread badge */
+.str-chat__channel-preview-messenger--unread {
+  font-weight: 600;
+}
+
+.str-chat__channel-preview-messenger--unread .str-chat__channel-preview-messenger--name {
+  font-weight: 700;
+}
+
+/* Typing indicator */
+.str-chat__typing-indicator {
+  padding: 8px 12px;
+  background-color: hsl(var(--b2));
+  border-radius: 16px;
+  display: inline-block;
+}
+
+/* Read receipt indicators */
+.message-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  font-size: 0.75rem;
+}
+
+.message-status-sent {
+  color: hsl(var(--bc) / 0.4);
+}
+
+.message-status-delivered {
+  color: hsl(var(--bc) / 0.4);
+}
+
+.message-status-read {
+  color: #3b82f6;
+}
+
+/* Message hover effects */
+.str-chat__message-simple:hover .message-status-indicator {
+  opacity: 1;
+}
+
+/* Custom message wrapper */
+.custom-message-wrapper {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.custom-message-wrapper.own-message {
+  flex-direction: row-reverse;
+}
+
+/* Unread count badge in chat list */
+.chat-list-unread-badge {
+  background-color: hsl(var(--p));
+  color: hsl(var(--pc));
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Active chat highlight */
+.chat-list-item-active {
+  background-color: hsl(var(--s) / 0.1);
+  border-left: 4px solid hsl(var(--s));
+}
+
+/* Last message preview */
+.chat-list-last-message {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.875rem;
+  color: hsl(var(--bc) / 0.6);
+}
+
+.chat-list-last-message.unread {
+  font-weight: 600;
+  color: hsl(var(--bc));
+}
+
+/* Stream Chat overrides */
+.str-chat__message-simple__actions {
+  background-color: hsl(var(--b1)) !important;
+}
+
+.str-chat__message-list {
+  background-color: hsl(var(--b1)) !important;
+}
+
+.str-chat__input-flat {
+  background-color: hsl(var(--b1)) !important;
+  border-color: hsl(var(--b3)) !important;
+}
+
+/* Message read status */
+.str-chat__message--read .message-status-read {
+  display: inline-flex;
+}
+
+.str-chat__message--delivered .message-status-delivered {
+  display: inline-flex;
+}
+
+.str-chat__message--sent .message-status-sent {
+  display: inline-flex;
+}

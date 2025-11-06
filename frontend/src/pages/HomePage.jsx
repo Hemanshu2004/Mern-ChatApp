@@ -1,170 +1,207 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import {
-  getOutgoingFriendReqs,
-  getRecommendedUsers,
   getUserFriends,
-  sendFriendRequest,
+  getFriendRequests,
+  createMeeting,
 } from "../lib/api";
-import { Link } from "react-router";
-import { CheckCircleIcon, MapPinIcon, UserPlusIcon, UsersIcon } from "lucide-react";
-
-import { capitialize } from "../lib/utils";
-
-import FriendCard, { getLanguageFlag } from "../components/FriendCard";
-import NoFriendsFound from "../components/NoFriendsFound";
+import {
+  MessageCircle,
+  Users,
+  VideoIcon,
+  BellIcon
+} from "lucide-react";
+import useAuthUser from "../hooks/useAuthUser";
+import FriendSelectionModal from "../components/FriendSelectionModal";
+import CreateGroupModal from "../components/CreateGroupModal";
+import ChatWindow from "../components/ChatWindow";
+import GroupChatWindow from "../components/GroupChatWindow";
+import toast from "react-hot-toast";
 
 const HomePage = () => {
-  const queryClient = useQueryClient();
-  const [outgoingRequestsIds, setOutgoingRequestsIds] = useState(new Set());
+  const { authUser } = useAuthUser();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showFriendModal, setShowFriendModal] = useState(false);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
 
-  const { data: friends = [], isLoading: loadingFriends } = useQuery({
+  // Get chat/group from URL parameters
+  const chatUserId = searchParams.get('chat');
+  const groupId = searchParams.get('group');
+  const hasActiveChat = chatUserId || groupId;
+
+  // ✅ Queries
+  const { data: friends = [] } = useQuery({
     queryKey: ["friends"],
     queryFn: getUserFriends,
   });
 
-  const { data: recommendedUsers = [], isLoading: loadingUsers } = useQuery({
-    queryKey: ["users"],
-    queryFn: getRecommendedUsers,
+  const { data: friendRequests = [] } = useQuery({
+    queryKey: ["friendRequests"],
+    queryFn: getFriendRequests,
+    enabled: !!authUser,
   });
 
-  const { data: outgoingFriendReqs } = useQuery({
-    queryKey: ["outgoingFriendReqs"],
-    queryFn: getOutgoingFriendReqs,
-  });
-
-  const { mutate: sendRequestMutation, isPending } = useMutation({
-    mutationFn: sendFriendRequest,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["outgoingFriendReqs"] }),
-  });
-
-  useEffect(() => {
-    const outgoingIds = new Set();
-    if (outgoingFriendReqs && outgoingFriendReqs.length > 0) {
-      outgoingFriendReqs.forEach((req) => {
-        outgoingIds.add(req.recipient._id);
-      });
-      setOutgoingRequestsIds(outgoingIds);
+  const handleNewChat = () => {
+    if (friends.length === 0) {
+      toast.error("Add some friends first to start chatting!");
+      navigate("/friends");
+      return;
     }
-  }, [outgoingFriendReqs]);
+    
+    if (friends.length === 1) {
+      setSearchParams({ chat: friends[0]._id });
+      toast.success(`Starting chat with ${friends[0].fullName}!`);
+    } else {
+      setShowFriendModal(true);
+    }
+  };
+
+  const handleNewGroup = () => {
+    if (friends.length === 0) {
+      toast.error("Add some friends first to create a group!");
+      navigate("/friends");
+      return;
+    }
+    setShowCreateGroupModal(true);
+  };
+
+  const handleCreateMeeting = async () => {
+    try {
+      if (!authUser?._id) {
+        toast.error("Please log in to create a meeting.");
+        return;
+      }
+      const { meetingId } = await createMeeting(
+        authUser._id,
+        authUser.fullName
+      );
+      const meetingLink = `${window.location.origin}/lobby/${meetingId}`;
+      await navigator.clipboard.writeText(meetingLink);
+      toast.success("Meeting created! Link copied to clipboard.");
+    } catch (err) {
+      console.error("Error creating meeting:", err);
+      toast.error("Failed to create meeting. Please try again.");
+    }
+  };
+
+  const handleCloseChat = () => {
+    setSearchParams({});
+  };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="container mx-auto space-y-10">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Your Friends</h2>
-          <Link to="/notifications" className="btn btn-outline btn-sm">
-            <UsersIcon className="mr-2 size-4" />
-            Friend Requests
-          </Link>
-        </div>
-
-        {loadingFriends ? (
-          <div className="flex justify-center py-12">
-            <span className="loading loading-spinner loading-lg" />
-          </div>
-        ) : friends.length === 0 ? (
-          <NoFriendsFound />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {friends.map((friend) => (
-              <FriendCard key={friend._id} friend={friend} />
-            ))}
-          </div>
-        )}
-
-        <section>
-          <div className="mb-6 sm:mb-8">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Meet New Learners</h2>
-                <p className="opacity-70">
-                  Discover People
+    <div className="h-screen w-full flex overflow-hidden">
+      {hasActiveChat ? (
+        // Show active chat - full screen
+        <>
+          {chatUserId && (
+            <ChatWindow userId={chatUserId} onClose={handleCloseChat} />
+          )}
+          {groupId && (
+            <GroupChatWindow groupId={groupId} onClose={handleCloseChat} />
+          )}
+        </>
+      ) : (
+          // Show welcome screen when no chat is active
+          <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-base-100 to-base-200">
+            <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
+              {/* Welcome Header */}
+              <div className="text-center mb-12">
+                <h1 className="text-4xl sm:text-5xl font-bold text-base-content mb-4">
+                  Welcome to ChatApp
+                </h1>
+                <p className="text-lg text-base-content/60">
+                  Your language learning companion
                 </p>
               </div>
+
+              {/* Quick Actions Card */}
+              <div className="bg-base-100 rounded-3xl shadow-2xl p-8 sm:p-12 border border-base-300">
+                <h2 className="text-2xl font-bold text-base-content mb-8 text-center">
+                  Quick Actions
+                </h2>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* New Chat */}
+              <button
+                onClick={handleNewChat}
+                className="group flex flex-col items-center gap-4 p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/20 border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105 hover:shadow-xl"
+              >
+                <div className="w-16 h-16 rounded-full bg-primary/20 group-hover:bg-primary/30 flex items-center justify-center transition-all">
+                  <MessageCircle className="w-8 h-8 text-primary" />
+                </div>
+                <div className="text-center">
+                  <h3 className="font-semibold text-base-content mb-1">New Chat</h3>
+                  <p className="text-xs text-base-content/60">Start a conversation</p>
+                </div>
+              </button>
+
+              {/* New Group */}
+              <button
+                onClick={handleNewGroup}
+                className="group flex flex-col items-center gap-4 p-6 rounded-2xl bg-gradient-to-br from-accent/5 to-accent/10 hover:from-accent/10 hover:to-accent/20 border-2 border-accent/20 hover:border-accent/40 transition-all duration-300 hover:scale-105 hover:shadow-xl"
+              >
+                <div className="w-16 h-16 rounded-full bg-accent/20 group-hover:bg-accent/30 flex items-center justify-center transition-all">
+                  <Users className="w-8 h-8 text-accent" />
+                </div>
+                <div className="text-center">
+                  <h3 className="font-semibold text-base-content mb-1">New Group</h3>
+                  <p className="text-xs text-base-content/60">Create a group chat</p>
+                </div>
+              </button>
+
+              {/* Create Meeting */}
+              <button
+                onClick={handleCreateMeeting}
+                className="group flex flex-col items-center gap-4 p-6 rounded-2xl bg-gradient-to-br from-success/5 to-success/10 hover:from-success/10 hover:to-success/20 border-2 border-success/20 hover:border-success/40 transition-all duration-300 hover:scale-105 hover:shadow-xl"
+              >
+                <div className="w-16 h-16 rounded-full bg-success/20 group-hover:bg-success/30 flex items-center justify-center transition-all">
+                  <VideoIcon className="w-8 h-8 text-success" />
+                </div>
+                <div className="text-center">
+                  <h3 className="font-semibold text-base-content mb-1">Create Meeting</h3>
+                  <p className="text-xs text-base-content/60">Start a video call</p>
+                </div>
+              </button>
+
+              {/* Friend Requests */}
+              <Link
+                to="/notifications"
+                className="group flex flex-col items-center gap-4 p-6 rounded-2xl bg-gradient-to-br from-warning/5 to-warning/10 hover:from-warning/10 hover:to-warning/20 border-2 border-warning/20 hover:border-warning/40 transition-all duration-300 hover:scale-105 hover:shadow-xl relative"
+              >
+                <div className="w-16 h-16 rounded-full bg-warning/20 group-hover:bg-warning/30 flex items-center justify-center transition-all">
+                  <BellIcon className="w-8 h-8 text-warning" />
+                </div>
+                <div className="text-center">
+                  <h3 className="font-semibold text-base-content mb-1">Friend Requests</h3>
+                  <p className="text-xs text-base-content/60">Manage requests</p>
+                </div>
+                {friendRequests.length > 0 && (
+                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-warning rounded-full flex items-center justify-center text-warning-content font-bold text-sm shadow-lg">
+                    {friendRequests.length}
+                  </div>
+                )}
+              </Link>
             </div>
           </div>
-
-          {loadingUsers ? (
-            <div className="flex justify-center py-12">
-              <span className="loading loading-spinner loading-lg" />
-            </div>
-          ) : recommendedUsers.length === 0 ? (
-            <div className="card bg-base-200 p-6 text-center">
-              <h3 className="font-semibold text-lg mb-2">No recommendations available</h3>
-              <p className="text-base-content opacity-70">
-                Check back later for new people to connect with!
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recommendedUsers.map((user) => {
-                const hasRequestBeenSent = outgoingRequestsIds.has(user._id);
-
-                return (
-                  <div
-                    key={user._id}
-                    className="card bg-base-200 hover:shadow-lg transition-all duration-300"
-                  >
-                    <div className="card-body p-5 space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="avatar size-16 rounded-full">
-                          <img src={user.profilePic} alt={user.fullName} />
-                        </div>
-
-                        <div>
-                          <h3 className="font-semibold text-lg">{user.fullName}</h3>
-                          {user.location && (
-                            <div className="flex items-center text-xs opacity-70 mt-1">
-                              <MapPinIcon className="size-3 mr-1" />
-                              {user.location}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Languages with flags */}
-                      <div className="flex flex-wrap gap-1.5">
-                        <span className="badge badge-secondary">
-                          {getLanguageFlag(user.nativeLanguage)}
-                          Native: {capitialize(user.nativeLanguage)}
-                        </span>
-                        <span className="badge badge-outline">
-                          {getLanguageFlag(user.learningLanguage)}
-                          Learning: {capitialize(user.learningLanguage)}
-                        </span>
-                      </div>
-
-                      {user.bio && <p className="text-sm opacity-70">{user.bio}</p>}
-
-                      {/* Action button */}
-                      <button
-                        className={`btn w-full mt-2 ${
-                          hasRequestBeenSent ? "btn-disabled" : "btn-primary"
-                        } `}
-                        onClick={() => sendRequestMutation(user._id)}
-                        disabled={hasRequestBeenSent || isPending}
-                      >
-                        {hasRequestBeenSent ? (
-                          <>
-                            <CheckCircleIcon className="size-4 mr-2" />
-                            Request Sent
-                          </>
-                        ) : (
-                          <>
-                            <UserPlusIcon className="size-4 mr-2" />
-                            Send Friend Request
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
+        </div>
       </div>
+      )}
+
+      {/* Modals */}
+      <FriendSelectionModal
+        isOpen={showFriendModal}
+        onClose={() => setShowFriendModal(false)}
+        friends={friends}
+        title="Start a Chat"
+      />
+
+      <CreateGroupModal
+        isOpen={showCreateGroupModal}
+        onClose={() => setShowCreateGroupModal(false)}
+        friends={friends}
+      />
     </div>
   );
 };
